@@ -14,14 +14,38 @@ npm install --save @tdreyno/versionable
 ## Example
 
 ```typescript
-import { create } from "@tdreyno/versionable"
+import { Migration, Version } from "@tdreyno/versionable"
+import * as z from "zod"
 
-const q = create()
+const V1 = new Version(
+  "607246b",
+  z.object({
+    b: z.string(),
+  }),
+)
 
-// Will run these in order of function execution (a, b, c) rather than in parallel.
-const results = await Promise.all([
-  q.enqueue(() => "a"),
-  q.enqueue(() => "b"),
-  q.enqueue(() => "c"),
-])
+const V2 = new Version(
+  "9adaf55",
+  z.object({
+    a: z.string(),
+  }),
+)
+
+const MIGRATE_V1_TO_V2 = new Migration(V1, V2, ({ b }) => ({
+  a: b,
+}))
+
+const objVersion = versionable({
+  // current version
+  currentVersion: V3,
+
+  // Known versions
+  versions: [V1, V2],
+
+  migrations: [MIGRATE_V1_TO_V2],
+})
+
+const result = objVersion.initialize("607246b", { b: "hello" })
+
+// result will be ["9adaf55", { a: "hello" }]
 ```
